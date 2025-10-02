@@ -195,7 +195,7 @@ class Emulator:
         ad = 0
 
         self.dmem[0] = 7
-        self.dmem[1:8] = [129, -321, 23, 1919, 2, 0, -9]
+        self.dmem[1:8] = [129, -321, 23, 1919, 2, 1929, -9]
 
         assembler.assemble()
         
@@ -207,12 +207,11 @@ class Emulator:
             cmd = self.cmem[self.pc] >> 12
             ad = self.cmem[self.pc] & 0xFFF
 
-            print(f'Command: {bin(cmd)}')
             self.__handle_command(cmd, ad)
 
             self.pc += 1
 
-        print(self.RON, self.acc)
+        print(f'Maximum: {self.RON[2]}')
 
 
 '''

@@ -15,6 +15,7 @@ class Assembler:
     def __init__(self, filename):
         self.points = {}
         self.programm = []
+        self.data = {}
         self.filename = filename
 
     def parse_operand(self, operand):
@@ -27,7 +28,6 @@ class Assembler:
         
         is_address - indicates whether to work with the memoty or with the value.
         """
-
 
         operand = operand.strip()
         is_address = '[' in operand
@@ -43,7 +43,7 @@ class Assembler:
             value = reg_number
         
         return value, is_register, is_address
-        
+
     def first_pass(self):
         """
         First pass. Collecting marks.
@@ -123,6 +123,37 @@ class Assembler:
                 self.programm.append(result)
                 command_insex += 1
     
+    def third_pass(self):
+
+        section_data_found = False
+
+        with open(self.filename, 'r') as file:
+
+            for line in file:
+                if 'section .text' in line:
+                    break
+
+                if 'section .data' in line:
+                    section_data_found = True
+                    continue
+                
+                if not section_data_found:
+                    continue
+                
+                words = line.strip().split()
+
+                if len(words) == 0:
+                    continue
+                
+                if len(words) == 1:
+                    raise ValueError(f"Error! Wrong number of arguments in line: {len(words)}")
+                
+                if not isinstance(words[0], str):
+                    raise ValueError(f"Error! Wrong name for variable: {words[0]}")
+
+                self.data[words[0]] = [int(words[i].replace(',', '')) for i in range(1, len(words))]
+
+
     def print_commands(self):
 
         for i, command in enumerate(self.programm):
@@ -131,9 +162,11 @@ class Assembler:
     def assemble(self):
         self.first_pass()
         self.second_pass()
+        self.third_pass()
 
 
 if __name__ == "__main__":
         
     a = Assembler('programm.txt')
     a.assemble()
+    print(a.data)
