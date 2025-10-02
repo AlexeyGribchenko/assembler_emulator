@@ -15,10 +15,11 @@ class Assembler:
     def __init__(self, filename):
         self.points = {}
         self.programm = []
-        self.data = {}
+        self.data = []
+        self.var_addresses = {}
         self.filename = filename
 
-    def parse_operand(self, operand):
+    def parse_operand(self, operand: str):
         """
         Returns value, is_register, is_address.
         
@@ -106,12 +107,13 @@ class Assembler:
                     if command in ['JP', 'JN']:
                         if operand not in self.points:
                             raise ValueError(f'Error! Wrong operand value!\ncommand: {command}\nvalue: {operand}')
+                        
                         val = self.points[operand]
                     else:
                         val, reg, ad = self.parse_operand(operand)
-                        # FOR WORK WITH DATA
-                        # if isinstance(val, str) and val in seld.data:
-                        #     val = self.data[val]
+                        # FOR WORK WITH VARIABLES
+                        if isinstance(val, str) and val in self.var_addresses.keys():
+                            val = self.var_addresses[val]
                     
                     result = cmd_code | reg << 11 | ad << 10 | val
                 
@@ -123,7 +125,7 @@ class Assembler:
                 self.programm.append(result)
                 command_insex += 1
     
-    def third_pass(self):
+    def zero_pass(self):
 
         section_data_found = False
 
@@ -150,8 +152,9 @@ class Assembler:
                 
                 if not isinstance(words[0], str):
                     raise ValueError(f"Error! Wrong name for variable: {words[0]}")
-
-                self.data[words[0]] = [int(words[i].replace(',', '')) for i in range(1, len(words))]
+                
+                self.var_addresses[words[0]] = len(self.data)
+                self.data.extend([int(words[i].replace(',', '')) for i in range(1, len(words))])
 
 
     def print_commands(self):
@@ -160,9 +163,9 @@ class Assembler:
             print(f'self.cmem[{i}] = {bin(command)}')
 
     def assemble(self):
+        self.zero_pass()
         self.first_pass()
         self.second_pass()
-        self.third_pass()
 
 
 if __name__ == "__main__":

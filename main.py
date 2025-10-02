@@ -38,6 +38,8 @@ class Emulator:
         # flags
         self.ez = 0
         self.sf = 0
+        # variables
+        self.var_addresses = {}
     
     def __separate_address(self, operand):
         is_reg = (operand >> 11) & 1
@@ -189,17 +191,26 @@ class Emulator:
                 print("Error, wrong comand value!")
                 exit(1)
     
+    def retrieve_data(self, data: list) -> None:
+        """
+        Retrieves data from assembler and loads it into emulator.
+        """
+        self.dmem[0:len(data)] = data[:]
+
+    def retrieve_programm(self, programm: list) -> None:
+        self.cmem[0:len(programm)] = programm[:]
+
+
     def run_emulator(self, assembler: Assembler):
+
+        assembler.assemble()
+
+        # load data into emilator
+        self.retrieve_data(assembler.data)
+        self.retrieve_programm(assembler.programm)
 
         cmd = 0
         ad = 0
-
-        self.dmem[0] = 7
-        self.dmem[1:8] = [129, -321, 23, 1919, 2, 1929, -9]
-
-        assembler.assemble()
-        
-        self.cmem[0:len(assembler.programm)] = assembler.programm[:]
 
         # "programm loop"
         while cmd != 0b1111:
