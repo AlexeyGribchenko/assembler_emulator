@@ -5,15 +5,17 @@ from command_converter import Assembler
 '''
     commands:
     
-    0x0000 EMPTY - do nothing
-    0x0001 LOAD  - load data into ACC from operand
-    0x0010 STORE - load data from ACC into operand
-    0x0100 INC   - increment operand
-    0x0101 DEC   - decrement operand
-    0x0110 JP    - jump to istruction if result of comparement if positive
-    0x0111 JN    - jump to istruction if result of comparement if negative
-    0x1000 CMP   - compare ACC and operand values
-    0x1111 RET   - stop the programm
+    0b0000 EMPTY - do nothing
+    0b0001 LOAD  - load data into ACC from operand
+    0b0010 STORE - load data from ACC into operand
+    0b0100 INC   - increment operand
+    0b0101 DEC   - decrement operand
+    0b0110 JP    - jump to istruction if result of comparement if positive
+    0b0111 JN    - jump to istruction if result of comparement if negative
+    0b1000 CMP   - compare ACC and operand values
+    0b1001 ADD   - add up ACC with operand
+    0b1010 MUL   - multiply ACC and operand
+    0b1111 RET   - stop the programm
 
     comand:
 
@@ -185,6 +187,17 @@ class Emulator:
                     self.sf = 1
             
             case 0b1111:
+                """RET"""
+                pass
+
+            case 0b1001:
+                """ADD"""
+                print('ADD')
+                pass
+
+            case 0b1010:
+                """MUL"""
+                print('MUL')
                 pass
 
             case _:
@@ -198,6 +211,9 @@ class Emulator:
         self.dmem[0:len(data)] = data[:]
 
     def retrieve_programm(self, programm: list) -> None:
+        """
+        Retrieves programm from assembler and loads it into emulator.
+        """
         self.cmem[0:len(programm)] = programm[:]
 
 
@@ -223,13 +239,8 @@ class Emulator:
             self.pc += 1
 
         print(f'Maximum: {self.RON[2]}')
+        print(self.dmem)
 
-
-'''
-заметка на будущее
-если надо будет сохранять в память данные из секции .data, то можно сделать словарь с
-адресами, наверно
-'''
 
 if __name__ == "__main__":
 

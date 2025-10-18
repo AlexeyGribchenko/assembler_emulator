@@ -119,13 +119,14 @@ class Assembler:
                 
                 else:
                     raise ValueError('Error! Invalid syntax:', line)
-                
-                # print(f'self.cmem[{command_insex}] = {bin(result)} {words[0]}')
 
                 self.programm.append(result)
                 command_insex += 1
     
     def zero_pass(self):
+        """
+        Finds variables in .data section and places them into memory.
+        """
 
         section_data_found = False
 
@@ -170,6 +171,6 @@ class Assembler:
 
 if __name__ == "__main__":
         
-    a = Assembler('programm.txt')
+    a = Assembler('prog2.txt')
     a.assemble()
     print(a.data)
