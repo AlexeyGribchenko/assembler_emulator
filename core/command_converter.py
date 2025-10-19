@@ -2,24 +2,28 @@ COMMANDS = {
     'EMPTY': 0b0000,
     'LOAD': 0b0001,
     'STORE': 0b0010,
+    'STOREH': 0b0011,
     'INC': 0b0100,
     'DEC': 0b0101,
     'JP': 0b0110,
     'JN': 0b0111,
     'CMP': 0b1000,
+    'MUL': 0b1001,
+    'ADD': 0b1010,
+    'ADH': 0b1011,
     'RET': 0b1111
 }
 
-class Assembler:
+class Converter:
 
     def __init__(self, filename):
-        self.points = {}
-        self.programm = []
-        self.data = []
-        self.var_addresses = {}
-        self.filename = filename
+        self.__points = {}
+        self.__commands = []
+        self.__data = []
+        self.__var_addresses = {}
+        self.__filename = filename
 
-    def parse_operand(self, operand: str):
+    def __parse_operand(self, operand: str):
         """
         Returns value, is_register, is_address.
         
@@ -45,7 +49,41 @@ class Assembler:
         
         return value, is_register, is_address
 
-    def first_pass(self):
+    def __zero_pass(self):
+        """
+        Finds variables in .__data section and places them into memory.
+        """
+
+        section_data_found = False
+
+        with open(self.__filename, 'r') as file:
+
+            for line in file:
+                if 'section .text' in line:
+                    break
+
+                if 'section .data' in line:
+                    section_data_found = True
+                    continue
+                
+                if not section_data_found:
+                    continue
+                
+                words = line.strip().split()
+
+                if len(words) == 0:
+                    continue
+                
+                if len(words) == 1:
+                    raise ValueError(f"Error! Wrong number of arguments in line: {len(words)}")
+                
+                if not isinstance(words[0], str):
+                    raise ValueError(f"Error! Wrong name for variable: {words[0]}")
+                
+                self.__var_addresses[words[0]] = len(self.__data)
+                self.__data.extend([int(words[i].replace(',', '')) for i in range(1, len(words))])
+
+    def __first_pass(self):
         """
         First pass. Collecting marks.
         Example:
@@ -53,7 +91,7 @@ class Assembler:
             MARK:
         """
 
-        with open(self.filename, 'r') as file:
+        with open(self.__filename, 'r') as file:
             command_index = 0
 
             for line in file:
@@ -64,11 +102,11 @@ class Assembler:
 
                 if len(words) == 1 and words[0].endswith(':'):
                     label = words[0][:-1]
-                    self.points[label] = command_index
+                    self.__points[label] = command_index
                 elif words[0] in COMMANDS:
                     command_index += 1
         
-    def second_pass(self):
+    def __second_pass(self):
         """
         Second pass. Machine code generation.
         Example:
@@ -76,7 +114,7 @@ class Assembler:
             LOAD [R1] -> 0b00011100000000001
         """
 
-        with open(self.filename, 'r') as file:
+        with open(self.__filename, 'r') as file:
             command_insex = 0
 
             for line in file:
@@ -105,72 +143,44 @@ class Assembler:
                     operand = words[1]
 
                     if command in ['JP', 'JN']:
-                        if operand not in self.points:
+                        if operand not in self.__points:
                             raise ValueError(f'Error! Wrong operand value!\ncommand: {command}\nvalue: {operand}')
                         
-                        val = self.points[operand]
+                        val = self.__points[operand]
                     else:
-                        val, reg, ad = self.parse_operand(operand)
+                        val, reg, ad = self.__parse_operand(operand)
                         # FOR WORK WITH VARIABLES
-                        if isinstance(val, str) and val in self.var_addresses.keys():
-                            val = self.var_addresses[val]
+                        if isinstance(val, str) and val in self.__var_addresses.keys():
+                            val = self.__var_addresses[val]
                     
                     result = cmd_code | reg << 11 | ad << 10 | val
                 
                 else:
                     raise ValueError('Error! Invalid syntax:', line)
 
-                self.programm.append(result)
+                self.__commands.append(result)
                 command_insex += 1
-    
-    def zero_pass(self):
-        """
-        Finds variables in .data section and places them into memory.
-        """
-
-        section_data_found = False
-
-        with open(self.filename, 'r') as file:
-
-            for line in file:
-                if 'section .text' in line:
-                    break
-
-                if 'section .data' in line:
-                    section_data_found = True
-                    continue
-                
-                if not section_data_found:
-                    continue
-                
-                words = line.strip().split()
-
-                if len(words) == 0:
-                    continue
-                
-                if len(words) == 1:
-                    raise ValueError(f"Error! Wrong number of arguments in line: {len(words)}")
-                
-                if not isinstance(words[0], str):
-                    raise ValueError(f"Error! Wrong name for variable: {words[0]}")
-                
-                self.var_addresses[words[0]] = len(self.data)
-                self.data.extend([int(words[i].replace(',', '')) for i in range(1, len(words))])
-
 
     def print_commands(self):
 
-        for i, command in enumerate(self.programm):
+        for i, command in enumerate(self.__commands):
             print(f'self.cmem[{i}] = {bin(command)}')
 
-    def assemble(self):
-        self.zero_pass()
-        self.first_pass()
-        self.second_pass()
+    def convert(self):
+        self.__zero_pass()
+        self.__first_pass()
+        self.__second_pass()
+    
+    def get_data(self) -> list[int]:
+        return self.__data.copy()
+    
+    def get_commands(self) -> list[int]:
+        return self.__commands.copy()
 
 
 if __name__ == "__main__":
         
-    a = Assembler('prog2.txt')
-    a.assemble()
-    print(a.data)
+    a = Converter('./programms/prog3.txt')
+    a.convert()
+    
+    a.print_commands()
