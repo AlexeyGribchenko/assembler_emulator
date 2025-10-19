@@ -2,8 +2,10 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext
 
 class AssemblerIDE:
-    def __init__(self, root):
-        self.root = root
+
+    def __init__(self):
+        
+        self.root = tk.Tk()
         self.root.title("Assembler IDE")
         self.root.geometry("800x600")
         
@@ -83,11 +85,11 @@ class AssemblerIDE:
         """Выполнение одного шага"""
         print("Выполнение шага")
         # Здесь будет логика пошагового выполнения
-
-def main():
-    root = tk.Tk()
-    app = AssemblerIDE(root)
-    root.mainloop()
+    
+    def start(self):
+        self.root.mainloop()
+        
 
 if __name__ == "__main__":
-    main()
+    app = AssemblerIDE()
+    app.start()
