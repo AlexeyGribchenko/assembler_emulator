@@ -1,0 +1,47 @@
+# R0 number of remaining elements
+# R1 pointer to an array element arr1
+# R2 pointer to an array element arr2
+# R3 sum of low-order bits
+# R4 sum of the highest bits
+
+section .data
+N 6
+arr1 65536, 2, 3, 4, 5, 6
+arr2 6, 5, 4, 3, 2, 1
+
+section .text
+
+CMAIN:
+
+LOAD [N]
+STORE R0
+LOAD arr1
+STORE R1 
+LOAD arr2
+STORE R2
+
+LOAD 0
+STORE R3
+STORE R4
+
+LOOP:
+
+    LOAD [R1]
+    MUL [R2]
+
+    ADD R3
+    ADH R4
+
+    STORE R3
+    STOREH R4
+
+    DEC R0
+    INC R1
+    INC R2
+
+    LOAD R0
+    CMP 0
+
+    JP LOOP
+
+RET

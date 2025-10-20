@@ -1,0 +1,41 @@
+# max element stores in R2
+
+section .data
+
+N 9
+arr 1, 2, 3, 1293, -432, 34, 3, 50, -443
+
+section .text
+global CMAIN
+
+CMAIN:
+
+LOAD [N]
+STORE R0
+LOAD arr
+STORE R1
+STORE [R2]
+
+INC R1
+DEC R0
+
+LOOP:
+
+    LOAD [R1]
+    CMP R2
+
+    JN SKIP_SWAP
+
+    STORE R2
+
+    SKIP_SWAP:
+
+        INC R1
+        DEC R0
+    
+    LOAD R0
+    CMP 0
+
+    JP LOOP
+
+RET

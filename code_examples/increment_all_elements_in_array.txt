@@ -1,0 +1,27 @@
+section .data
+
+N 5
+arr 1 2 3 4 5
+
+section .text
+
+LOAD [N]
+STORE R0
+
+LOAD arr
+STORE R1
+
+
+LOOP:
+
+    INC [R1]
+    INC R1
+
+    DEC R0
+    
+    LOAD R0
+    CMP 0
+
+    JP LOOP
+
+RET
