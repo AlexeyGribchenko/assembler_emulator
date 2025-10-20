@@ -16,12 +16,19 @@ COMMANDS = {
 
 class Converter:
 
-    def __init__(self, filename):
+    def __init__(self):
         self.__points = {}
         self.__commands = []
         self.__data = []
         self.__var_addresses = {}
-        self.__filename = filename
+        self.__code_text = ""
+
+    def __clear_data(self):
+        self.__points = {}
+        self.__commands = []
+        self.__data = []
+        self.__var_addresses = {}
+        self.__code_text = ""
 
     def __parse_operand(self, operand: str):
         """
@@ -54,34 +61,34 @@ class Converter:
         Finds variables in .__data section and places them into memory.
         """
 
+        lines = self.__code_text.splitlines()
+
         section_data_found = False
 
-        with open(self.__filename, 'r') as file:
+        for line in lines:
+            if 'section .text' in line:
+                break
 
-            for line in file:
-                if 'section .text' in line:
-                    break
+            if 'section .data' in line:
+                section_data_found = True
+                continue
+            
+            if not section_data_found:
+                continue
+            
+            words = line.strip().split()
 
-                if 'section .data' in line:
-                    section_data_found = True
-                    continue
-                
-                if not section_data_found:
-                    continue
-                
-                words = line.strip().split()
-
-                if len(words) == 0:
-                    continue
-                
-                if len(words) == 1:
-                    raise ValueError(f"Error! Wrong number of arguments in line: {len(words)}")
-                
-                if not isinstance(words[0], str):
-                    raise ValueError(f"Error! Wrong name for variable: {words[0]}")
-                
-                self.__var_addresses[words[0]] = len(self.__data)
-                self.__data.extend([int(words[i].replace(',', '')) for i in range(1, len(words))])
+            if len(words) == 0:
+                continue
+            
+            if len(words) == 1:
+                raise ValueError(f"Error! Wrong number of arguments in line: {len(words)}")
+            
+            if not isinstance(words[0], str):
+                raise ValueError(f"Error! Wrong name for variable: {words[0]}")
+            
+            self.__var_addresses[words[0]] = len(self.__data)
+            self.__data.extend([int(words[i].replace(',', '')) for i in range(1, len(words))])
 
     def __first_pass(self):
         """
@@ -91,21 +98,22 @@ class Converter:
             MARK:
         """
 
-        with open(self.__filename, 'r') as file:
-            command_index = 0
+        lines = self.__code_text.splitlines()
+    
+        command_index = 0
 
-            for line in file:
-                words = line.strip().split()
-                
-                if len(words) == 0:
-                    continue
+        for line in lines:
+            words = line.strip().split()
+            
+            if len(words) == 0:
+                continue
 
-                if len(words) == 1 and words[0].endswith(':'):
-                    label = words[0][:-1]
-                    self.__points[label] = command_index
-                elif words[0] in COMMANDS:
-                    command_index += 1
-        
+            if len(words) == 1 and words[0].endswith(':'):
+                label = words[0][:-1]
+                self.__points[label] = command_index
+            elif words[0] in COMMANDS:
+                command_index += 1
+    
     def __second_pass(self):
         """
         Second pass. Machine code generation.
@@ -114,59 +122,64 @@ class Converter:
             LOAD [R1] -> 0b00011100000000001
         """
 
-        with open(self.__filename, 'r') as file:
-            command_insex = 0
+        lines = self.__code_text.splitlines()
+    
+        command_insex = 0
 
-            for line in file:
-                words = line.strip().split()
+        for line in lines:
+            words = line.strip().split()
 
-                if len(words) == 0:
-                    continue
+            if len(words) == 0:
+                continue
 
-                if len(words) == 1 and words[0].endswith(':'):
-                    command_insex += 1
-                    continue
-
-                if words[0] not in COMMANDS:
-                    continue
-                    
-                command = words[0]
-                cmd_code = COMMANDS[command] << 12
-                val = 0
-                reg = 0
-                ad = 0
-                
-                if len(words) == 1:
-                    result = cmd_code
-                
-                elif len(words) == 2:
-                    operand = words[1]
-
-                    if command in ['JP', 'JN']:
-                        if operand not in self.__points:
-                            raise ValueError(f'Error! Wrong operand value!\ncommand: {command}\nvalue: {operand}')
-                        
-                        val = self.__points[operand]
-                    else:
-                        val, reg, ad = self.__parse_operand(operand)
-                        # FOR WORK WITH VARIABLES
-                        if isinstance(val, str) and val in self.__var_addresses.keys():
-                            val = self.__var_addresses[val]
-                    
-                    result = cmd_code | reg << 11 | ad << 10 | val
-                
-                else:
-                    raise ValueError('Error! Invalid syntax:', line)
-
-                self.__commands.append(result)
+            if len(words) == 1 and words[0].endswith(':'):
                 command_insex += 1
+                continue
+
+            if words[0] not in COMMANDS:
+                continue
+                
+            command = words[0]
+            cmd_code = COMMANDS[command] << 12
+            val = 0
+            reg = 0
+            ad = 0
+            
+            if len(words) == 1:
+                result = cmd_code
+            
+            elif len(words) == 2:
+                operand = words[1]
+
+                if command in ['JP', 'JN']:
+                    if operand not in self.__points:
+                        raise ValueError(f'Error! Wrong operand value!\ncommand: {command}\nvalue: {operand}')
+                    
+                    val = self.__points[operand]
+                else:
+                    val, reg, ad = self.__parse_operand(operand)
+                    # FOR WORK WITH VARIABLES
+                    if isinstance(val, str) and val in self.__var_addresses.keys():
+                        val = self.__var_addresses[val]
+                
+                result = cmd_code | reg << 11 | ad << 10 | val
+            
+            else:
+                raise ValueError('Error! Invalid syntax:', line)
+
+            self.__commands.append(result)
+            command_insex += 1
 
     def print_commands(self):
 
-        for i, command in enumerate(self.__commands):
-            print(f'self.cmem[{i}] = {bin(command)}')
+        for command in self.__commands:
+            print(f'{bin(command)}')
 
-    def convert(self):
+    def convert(self, code_text):
+        self.__clear_data()
+
+        self.__code_text = code_text
+
         self.__zero_pass()
         self.__first_pass()
         self.__second_pass()
@@ -179,8 +192,4 @@ class Converter:
 
 
 if __name__ == "__main__":
-        
-    a = Converter('./programms/prog3.txt')
-    a.convert()
-    
-    a.print_commands()
+    pass

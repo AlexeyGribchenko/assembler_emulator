@@ -28,6 +28,9 @@
 
 class Emulator:
 
+    class EndOfProgrammError(Exception):
+        pass
+
     def __init__(self):
         # registers
         self.__acc = 0
@@ -35,28 +38,43 @@ class Emulator:
         self.__pc = 0
         self.__RON = [0] * 16
         # memory
-        self.__cmem = [0] * 32
-        self.__dmem = [0] * 16
+        self.__cmem = [0] * 64
+        self.__dmem = [0] * 64
         # flags
         self.__ez = 0
         self.__sf = 0
         self.__cf = 0
         # variables
         self.var_addresses = {}
-    
-    def get_flags(self):
-        return {
-            'EZ': self.__ez,
-            'SF': self.__sf,
-            'CF': self.__cf
-        }
+
+    def clear_emulator(self):
+        # registers
+        self.__acc = 0
+        self.__acch = 0
+        self.__pc = 0
+        self.__RON = [0] * 16
+        # memory
+        self.__cmem = [0] * 64
+        self.__dmem = [0] * 64
+        # flags
+        self.__ez = 0
+        self.__sf = 0
+        self.__cf = 0
+        # variables
+        self.var_addresses = {}
+
+    def get_memory(self):
+        return self.__dmem.copy()
 
     def get_registers(self):
         return {
             'ACC': self.__acc,
             'ACCH': self.__acch,
             'PC': self.__pc,
-            **{f'R{i}': self.__RON[i] for i in range(16)}
+            **{f'R{i}': self.__RON[i] for i in range(16)},
+            'EZ': self.__ez,
+            'SF': self.__sf,
+            'CF': self.__cf
         }
 
     def __separate_address(self, operand):
@@ -292,6 +310,8 @@ class Emulator:
         """
         Retrieves programm from converter and loads it into emulator.
         """
+        self.clear_emulator()
+
         self.__dmem[0:len(data)] = data[:]
         self.__cmem[0:len(commands)] = commands[:]
 
@@ -310,9 +330,11 @@ class Emulator:
             self.__handle_command(cmd, ad)
     
     def next_step(self) -> None:
-
         cmd = self.__cmem[self.__pc] >> 12
-        ad = self.__cmem[self.__pc] & 0xFFF
+        ad = self.__cmem[self.__pc] & 0xFFF            
+
+        if cmd == 0b1111:
+            raise Emulator.EndOfProgrammError("Programm finished!")
 
         self.__handle_command(cmd, ad)
 
