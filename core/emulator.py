@@ -1,7 +1,4 @@
 # hello everyone today we gonna learn c++
-
-from command_converter import Converter
-
 '''
     commands:
     
@@ -49,17 +46,17 @@ class Emulator:
     
     def get_flags(self):
         return {
-            'ez': self.__ez,
-            'sf': self.__sf,
-            'cf': self.__cf
+            'EZ': self.__ez,
+            'SF': self.__sf,
+            'CF': self.__cf
         }
 
     def get_registers(self):
         return {
-            'acc': self.__acc,
-            'acch': self.__acch,
-            'pc': self.__pc,
-            'RON': self.__RON.copy()
+            'ACC': self.__acc,
+            'ACCH': self.__acch,
+            'PC': self.__pc,
+            **{f'R{i}': self.__RON[i] for i in range(16)}
         }
 
     def __separate_address(self, operand):
@@ -312,20 +309,16 @@ class Emulator:
 
             self.__handle_command(cmd, ad)
     
-    def run_emulator_by_steps(self) -> None:
+    def next_step(self) -> None:
 
-        cmd = 0
-        ad = 0
+        cmd = self.__cmem[self.__pc] >> 12
+        ad = self.__cmem[self.__pc] & 0xFFF
 
-        # "programm loop"
-        while cmd != 0b1111:
-    
-            cmd = self.__cmem[self.__pc] >> 12
-            ad = self.__cmem[self.__pc] & 0xFFF
-
-            self.__handle_command(cmd, ad)
+        self.__handle_command(cmd, ad)
 
 
 if __name__ == "__main__":
 
+    e = Emulator()
+    print(e.get_registers())
     print("There's nothing!")
