@@ -14,6 +14,9 @@
     0b1001 MUL    - multiply __acc and operand
     0b1010 ADD    - add up __acc with operand
     0b1011 ADH    - add up __accH with operand
+    0b1100 LOADH  - load data into __acch from operand
+    0b1101 - free for command
+    0b1110 - free for command
     0b1111 RET    - stop the programm
 
     comand:
@@ -76,6 +79,9 @@ class Emulator:
             'SF': self.__sf,
             'CF': self.__cf
         }
+    
+    def get_current_command(self):
+        return self.__cmem[self.__pc] >> 12
 
     def __separate_address(self, operand):
         is_reg = (operand >> 11) & 1
@@ -113,6 +119,28 @@ class Emulator:
                 if is_reg:
                     self.__acc = self.__RON[val]
                     return
+
+            case 0b1100:
+                """LOADH"""
+
+                is_reg, is_bracket, val = self.__separate_address(operand)
+
+                if not is_bracket and not is_reg:
+                    self.__acch = val
+                    return
+                
+                if is_reg and is_bracket:
+                    self.__acch = self.__dmem[self.__RON[val]]
+                    return
+                
+                if is_bracket:
+                    self.__acch = self.__dmem[val]
+                    return
+                
+                if is_reg:
+                    self.__acch = self.__RON[val]
+                    return
+
 
             case 0b0010:
                 """STORE"""
@@ -243,16 +271,20 @@ class Emulator:
 
                 is_reg, is_bracket, val = self.__separate_address(operand)
 
-                multipliable = val
+                multipliable2 = val
 
                 if is_reg and is_bracket:
-                    multipliable = self.__dmem[self.__RON[val]]
+                    # '[R1]' is restricted syntax
+                    print("Error: '[R1]' is restricted syntax")
+                    pass
                 elif is_reg:
-                    multipliable = self.__RON[val]
+                    multipliable2 = self.__RON[val]
                 elif is_bracket:
-                    multipliable = self.__dmem[val]
+                    multipliable2 = self.__dmem[val]
 
-                product = self.__acc * multipliable
+                multipliable1 = self.__acch << 16 | self.__acc
+
+                product = multipliable1 * multipliable2
 
                 lower = product & 0xFFFF
                 higher = (product >> 16) & 0xFFFF
@@ -340,7 +372,4 @@ class Emulator:
 
 
 if __name__ == "__main__":
-
-    e = Emulator()
-    print(e.get_registers())
-    print("There's nothing!")
+    pass

@@ -11,3 +11,10 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+"""
+
+TODO: refactor code in gui.py: lines too long
+TODO: write readme.md
+
+"""

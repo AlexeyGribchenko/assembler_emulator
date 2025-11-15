@@ -3,10 +3,11 @@
 # R2 pointer to an array element arr2
 # R3 sum of low-order bits
 # R4 sum of the highest bits
+# R5 multipliable
 
 section .data
 N 6
-arr1 65536, 2, 3, 4, 5, 6
+arr1 1, 2, 3, 4, 5, 6
 arr2 6, 5, 4, 3, 2, 1
 
 section .text
@@ -27,13 +28,20 @@ STORE R4
 LOOP:
 
     LOAD [R1]
-    MUL [R2]
+    STORE R5
+
+    LOAD [R2]
+
+    MUL R5
 
     ADD R3
     ADH R4
 
     STORE R3
     STOREH R4
+
+    LOAD 0
+    LOADH 0
 
     DEC R0
     INC R1

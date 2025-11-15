@@ -3,6 +3,21 @@ from tkinter import ttk, scrolledtext
 from core import Emulator, Converter
 
 NUMBER_OF_VISIBLE_MEMORY_CELLS = 20
+COMMANDS = {
+    0b0000: 'EMPTY',
+    0b0001: 'LOAD',
+    0b0010: 'STORE',
+    0b0011: 'STOREH',
+    0b0100: 'INC',
+    0b0101: 'DEC',
+    0b0110: 'JP',
+    0b0111: 'JN',
+    0b1000: 'CMP',
+    0b1001: 'MUL',
+    0b1010: 'ADD',
+    0b1011: 'ADH',
+    0b1111: 'RET'
+}
 
 class AssemblerIDE:
 
@@ -19,6 +34,9 @@ class AssemblerIDE:
         self.__mem_lables = [None] * NUMBER_OF_VISIBLE_MEMORY_CELLS
         self.__run_code_btns = []
         self.__is_programm_finished = True
+
+        self.__command_string = None
+        self.__command_number = None
 
         self.__create_widgets()
     
@@ -58,6 +76,7 @@ class AssemblerIDE:
 
             self.__data_lables[reg] = reg_value
 
+        # flags
         flg_row = 1 + len(service_registers)
 
         flg_label = ttk.Label(data_frame, text="Флаги:", font=('Arial', 10, 'bold'))
@@ -71,6 +90,25 @@ class AssemblerIDE:
 
             self.__data_lables[flg] = flg_value
 
+        # command
+        command_label = ttk.Label(data_frame, text="Текущая команда", font=('Arial', 10, 'bold'))
+        command_label.grid(row=flg_row + len(flags) + 1, column=0, columnspan=2, sticky=tk.W)
+
+        command_number_label = ttk.Label(data_frame, text="Число", font=('Arial', 10))
+        command_number_label.grid(row=flg_row + len(flags) + 2, column=0, columnspan=2, sticky=tk.W)
+
+        command_string_label = ttk.Label(data_frame, text="Строка", font=('Arial', 10))
+        command_string_label.grid(row=flg_row + len(flags) + 3, column=0, columnspan=2, sticky=tk.W)
+
+        command_number_value = ttk.Label(data_frame, text='0b0000', width=8, background='white', relief="sunken", font=('Arial', 11))
+        command_number_value.grid(row=flg_row + len(flags) + 2, column=1, sticky=tk.W)
+        self.__command_number = command_number_value
+
+        command_string_value = ttk.Label(data_frame, text=COMMANDS[0b0000], width=8, background='white', relief="sunken", font=('Arial', 11))
+        command_string_value.grid(row=flg_row + len(flags) + 3, column=1, sticky=tk.W)
+        self.__command_string = command_string_value
+
+        # RON
         ron_label = ttk.Label(data_frame, text="RON:", font=('Arial', 10, 'bold'))
         ron_label.grid(row=0, column=2, sticky=(tk.W), pady=(0, 10), padx=(20, 0))
 
@@ -145,6 +183,7 @@ class AssemblerIDE:
         for btn in self.__run_code_btns:
             btn.state(['!disabled'])
 
+        self.__update_command_label()
         self.__update_memory_lables()
 
     def __run_code(self):
@@ -162,9 +201,15 @@ class AssemblerIDE:
         except Emulator.EndOfProgrammError as e:
             self.__finish_programm()
 
+        self.__update_command_label()
         self.__update_register_lables()
         self.__update_memory_lables()
     
+    def __update_command_label(self):
+        command = self.__emu.get_current_command()
+        self.__command_number.config(text=f'{command:04b}')
+        self.__command_string.config(text=COMMANDS[command])
+
     def __update_register_lables(self):
         for key, value in self.__emu.get_registers().items():
             self.__data_lables[key].config(text=value)
@@ -185,6 +230,7 @@ class AssemblerIDE:
     def __reset_programm(self):
         self.__code_text_field.delete('1.0', tk.END)
         self.__emu.clear_emulator()
+        self.__update_command_label()
         self.__update_register_lables()
         self.__update_memory_lables()
 
